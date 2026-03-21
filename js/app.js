@@ -1,4 +1,5 @@
 import { getUnits } from "./api.js";
+import { convert, compare, arithmetic } from "./conversion.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
   const state = {
@@ -51,3 +52,8 @@ async function loadHistory() {
   console.log("Loading history...");
   // later: fetch history from API
 }
+
+// for the sake of checking the logic.
+console.log(await convert(1, "km", "m"));      // works
+console.log(await convert(1000, "m", "cm"));   // works
+console.log(await convert(0, "C", "F"));       // works
