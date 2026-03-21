@@ -1,8 +1,8 @@
-document.addEventListener("DOMContentLoaded", async () => {
+import { getUnits } from "./api.js";
 
-  // 1️ State object
+document.addEventListener("DOMContentLoaded", async () => {
   const state = {
-    type: "Length",
+    type: "length",
     action: "Conversion",
     fromVal: null,
     fromUnit: "",
@@ -14,37 +14,33 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("App Initialized");
 
   try {
-    // 2️ Attach event listeners (stub)
     attachEventListeners();
-
-    // 3️ Load default units (stub)
-    await loadUnits("Length");
-
-    // 4️ Hide operator row (stub)
+    await loadUnits(state.type);
     toggleOperators(false);
-
-    // 5️ Load history (stub)
     await loadHistory();
-
   } catch (error) {
     console.error(error);
     alert("Server unavailable");
   }
-
 });
-
-
-// =======================
-// Stub functions
-// =======================
 
 function attachEventListeners() {
   console.log("Listeners attached");
+  // add click handlers for type cards, action buttons here later
 }
 
 async function loadUnits(type) {
   console.log("Loading units for type:", type);
-  //  For UC-02 we don’t fetch anything yet
+
+  const units = await getUnits(type);
+
+  if (units.length === 0) {
+    console.warn("No units found for type:", type);
+  }
+
+  console.log("Units from API:", units);
+
+  // later: populate FROM and TO dropdowns
 }
 
 function toggleOperators(show) {
@@ -53,4 +49,5 @@ function toggleOperators(show) {
 
 async function loadHistory() {
   console.log("Loading history...");
+  // later: fetch history from API
 }
