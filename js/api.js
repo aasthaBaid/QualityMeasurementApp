@@ -1,33 +1,40 @@
-const BASE_URL = "http://localhost:5000";
+export const BASE_URL = "http://localhost:5000";
 
-// Fetch units by type
 export async function getUnits(type) {
   try {
-    const res = await fetch(`http://localhost:5000/units?type=${type}`);
+    const res = await fetch(`${BASE_URL}/units?type=${type}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
-  } catch (error) {
-    console.error("Error fetching units:", error.message);
+  } catch (err) {
+    console.error("Error fetching units:", err);
     return [];
   }
 }
 
 export async function getConversion(from, to) {
-  if (from === to) {
-    // same unit: factor 1, no formula needed
-    return { from, to, factor: 1, formula: null };
-  }
+  if (from === to) return { from, to, factor: 1, formula: null };
 
   try {
     const res = await fetch(`${BASE_URL}/conversions?from=${from}&to=${to}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
     const data = await res.json();
     if (!data.length) throw new Error("Conversion not available for this pair");
-
     return data[0];
-  } catch (error) {
-    console.error("Error fetching conversion:", error.message);
-    throw error; // caller can show message in UI
+  } catch (err) {
+    console.error("Error fetching conversion:", err);
+    throw err;
+  }
+}
+
+export async function saveHistory(record) {
+  try {
+    const res = await fetch(`${BASE_URL}/history`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(record)
+    });
+    return await res.json();
+  } catch (err) {
+    console.error("Error saving history:", err);
   }
 }

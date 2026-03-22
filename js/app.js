@@ -1,17 +1,18 @@
-import { getUnits } from "./api.js";
-import { convert, compare, arithmetic } from "./conversion.js";
+import { getUnits, saveHistory } from "./api.js";
+import { convert } from "./conversion.js";
+
+// ✅ state moved outside (fix scope issue)
+const state = {
+  type: "length",
+  action: "Conversion",
+  fromVal: null,
+  fromUnit: "",
+  toVal: null,
+  toUnit: "",
+  operator: "+"
+};
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const state = {
-    type: "length",
-    action: "Conversion",
-    fromVal: null,
-    fromUnit: "",
-    toVal: null,
-    toUnit: "",
-    operator: "+"
-  };
-
   console.log("App Initialized");
 
   try {
@@ -25,11 +26,50 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
+// ✅ attach all listeners
 function attachEventListeners() {
   console.log("Listeners attached");
-  // add click handlers for type cards, action buttons here later
+
+  // conversion triggers
+  document.querySelector("#from-value")
+    .addEventListener("input", performConversion);
+
+  document.querySelector("#unit-from")
+    .addEventListener("change", performConversion);
+
+  document.querySelector("#unit-to")
+    .addEventListener("change", performConversion);
+
+  // ✅ action buttons (FIX)
+  document.querySelector("#action-comparison")
+    .addEventListener("click", () => setAction("Comparison"));
+
+  document.querySelector("#action-conversion")
+    .addEventListener("click", () => setAction("Conversion"));
+
+  document.querySelector("#action-arithmetic")
+    .addEventListener("click", () => setAction("Arithmetic"));
 }
 
+// ✅ handle action switching
+function setAction(action) {
+  state.action = action;
+
+  // UI active toggle
+  document.querySelectorAll(".action-btn").forEach(btn => {
+    btn.classList.remove("active");
+  });
+
+  document.querySelector(`#action-${action.toLowerCase()}`)
+    .classList.add("active");
+
+  console.log("Action changed to:", action);
+
+  // re-run logic immediately
+  performConversion();
+}
+
+// load units (keeping your structure)
 async function loadUnits(type) {
   console.log("Loading units for type:", type);
 
@@ -40,20 +80,46 @@ async function loadUnits(type) {
   }
 
   console.log("Units from API:", units);
-
-  // later: populate FROM and TO dropdowns
 }
 
+// not used yet
 function toggleOperators(show) {
   console.log("Operator row visible?", show);
 }
 
+// not implemented yet
 async function loadHistory() {
   console.log("Loading history...");
-  // later: fetch history from API
 }
 
-// for the sake of checking the logic.
-console.log(await convert(1, "km", "m"));      // works
-console.log(await convert(1000, "m", "cm"));   // works
-console.log(await convert(0, "C", "F"));       // works
+// ✅ MAIN LOGIC FIXED HERE
+async function performConversion() {
+  const fromVal = parseFloat(document.querySelector("#from-value").value);
+  const fromUnit = document.querySelector("#unit-from").value;
+  const toUnit = document.querySelector("#unit-to").value;
+
+  if (isNaN(fromVal)) return;
+
+  try {
+    // ✅ ALWAYS convert (regardless of action)
+    const result = await convert(fromVal, fromUnit, toUnit);
+
+    document.querySelector(".value-display").textContent = result;
+
+    // save history only for conversion (optional)
+    if (state.action === "Conversion") {
+      const record = {
+        type: state.type,
+        action: state.action,
+        expression: `${fromVal} ${fromUnit} → ${toUnit}`,
+        result,
+        timestamp: new Date().toISOString()
+      };
+
+      await saveHistory(record);
+    }
+
+  } catch (error) {
+    console.error("Operation failed:", error.message);
+  }
+}

@@ -1,49 +1,75 @@
-// Import API helper
-import { getConversion } from "./api.js";
+// Universal base-unit conversion system
+// Base conversion factors (to base unit)
+const toBase = {
+  // length → meters
+  km: 1000,
+  m: 1,
+  cm: 0.01,
+  mm: 0.001,
+  mi: 1609.34,
+  yd: 0.9144,
+  ft: 0.3048,
+  in: 0.0254,
 
-// Convert a value from one unit to another
+  // weight → kg
+  kg: 1,
+  g: 0.001,
+  mg: 0.000001,
+  lb: 0.453592,
+
+  // volume → liter
+  L: 1,
+  mL: 0.001,
+  m3: 1000
+};
+
+// Main conversion function
 export async function convert(value, fromUnit, toUnit) {
   try {
-    // Get conversion record from API
-    const conversion = await getConversion(fromUnit, toUnit);
+    if (fromUnit === toUnit) return value;
 
-    let result;
-
-    if (conversion.factor !== null) {
-      // factor-based conversion
-      result = value * conversion.factor;
-    } else if (conversion.formula) {
-      // formula-based conversion (e.g., temperature)
-      // 'x' is the value to convert
-      result = eval(conversion.formula.replace(/x/g, value));
-    } else {
-      throw new Error("Invalid conversion record");
+    // Temperature (special case)
+    if (["C", "F", "K"].includes(fromUnit) && ["C", "F", "K"].includes(toUnit)) {
+      return convertTemperature(value, fromUnit, toUnit);
     }
+
+    // invalid units
+    if (!toBase[fromUnit] || !toBase[toUnit]) {
+      throw new Error("Unsupported unit");
+    }
+
+    // 1️ convert to base unit
+    const baseValue = value * toBase[fromUnit];
+
+    // 2️ convert to target unit
+    const result = baseValue / toBase[toUnit];
 
     return result;
 
-  } catch (error) {
-    console.error("Conversion failed:", error.message);
-    throw error; // caller (UI) can handle error display
+  } catch (err) {
+    console.error("Conversion failed:", err.message);
+    return null;
   }
 }
 
-// Compare two values after converting them to the same unit
-export async function compare(value1, unit1, value2, unit2) {
-  const convertedValue1 = await convert(value1, unit1, unit2);
-  if (convertedValue1 > value2) return 1;
-  if (convertedValue1 < value2) return -1;
-  return 0;
+// Temperature conversion helper
+function convertTemperature(value, from, to) {
+  let celsius;
+
+  // convert → Celsius
+  if (from === "C") celsius = value;
+  else if (from === "F") celsius = (value - 32) * 5 / 9;
+  else if (from === "K") celsius = value - 273.15;
+
+  // convert from Celsius → target
+  if (to === "C") return celsius;
+  if (to === "F") return (celsius * 9 / 5) + 32;
+  if (to === "K") return celsius + 273.15;
 }
 
-// Arithmetic operation: +, -, *, /
-export async function arithmetic(value1, unit1, value2, unit2, operator) {
-  const convertedValue2 = await convert(value2, unit2, unit1);
-  switch (operator) {
-    case "+": return value1 + convertedValue2;
-    case "-": return value1 - convertedValue2;
-    case "*": return value1 * convertedValue2;
-    case "/": return value1 / convertedValue2;
-    default: throw new Error("Invalid operator");
-  }
+// (optional, keep if used elsewhere)
+export function compareValues(val1, val2) {
+  if (val1 > val2) return "From is greater";
+  if (val1 < val2) return "To is greater";
+  return "Both are equal";
 }
