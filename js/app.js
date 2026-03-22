@@ -1,6 +1,6 @@
 import { getUnits, saveHistory, getHistory } from "./api.js";
 import { convert, compareValues, performArithmetic } from "./conversion.js";
-import { populateDropdown } from "./ui.js";
+import { populateDropdown, setActive } from "./ui.js";
 
 const state = {
     type: "length",
@@ -17,31 +17,51 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function attachEventListeners() {
 
-  // normal mode
-  document.querySelector("#from-value").addEventListener("input", performConversion);
-  document.querySelector("#unit-from").addEventListener("change", performConversion);
-  document.querySelector("#unit-to").addEventListener("change", performConversion);
+    // normal mode
+    document.querySelector("#from-value").addEventListener("input", performConversion);
+    document.querySelector("#unit-from").addEventListener("change", performConversion);
+    document.querySelector("#unit-to").addEventListener("change", performConversion);
 
-  // arithmetic mode
-  document.querySelector("#arith-value1").addEventListener("input", performConversion);
-  document.querySelector("#arith-value2").addEventListener("input", performConversion);
+    // arithmetic mode
+    document.querySelector("#arith-value1").addEventListener("input", performConversion);
+    document.querySelector("#arith-value2").addEventListener("input", performConversion);
 
-  document.querySelector("#arith-unit1").addEventListener("change", performConversion);
-  document.querySelector("#arith-unit2").addEventListener("change", performConversion);
-  document.querySelector("#arith-result-unit").addEventListener("change", performConversion);
+    document.querySelector("#arith-unit1").addEventListener("change", performConversion);
+    document.querySelector("#arith-unit2").addEventListener("change", performConversion);
+    document.querySelector("#arith-result-unit").addEventListener("change", performConversion);
 
-  document.querySelector("#operator").addEventListener("change", performConversion);
+    document.querySelector("#operator").addEventListener("change", performConversion);
 
-  // action buttons
-  document.querySelector("#action-comparison").onclick = () => setAction("Comparison");
-  document.querySelector("#action-conversion").onclick = () => setAction("Conversion");
-  document.querySelector("#action-arithmetic").onclick = () => setAction("Arithmetic");
+    // action buttons
+    document.querySelector("#action-comparison").onclick = () => setAction("Comparison");
+    document.querySelector("#action-conversion").onclick = () => setAction("Conversion");
+    document.querySelector("#action-arithmetic").onclick = () => setAction("Arithmetic");
 
-  // type buttons
-  document.querySelector("#type-length").onclick = () => setType("length");
-  document.querySelector("#type-weight").onclick = () => setType("weight");
-  document.querySelector("#type-temperature").onclick = () => setType("temperature");
-  document.querySelector("#type-volume").onclick = () => setType("volume");
+    // type buttons
+    document.querySelector("#type-length").onclick = () => setType("length");
+    document.querySelector("#type-weight").onclick = () => setType("weight");
+    document.querySelector("#type-temperature").onclick = () => setType("temperature");
+    document.querySelector("#type-volume").onclick = () => setType("volume");
+
+    const typeContainer = document.querySelectorAll(".row.g-3.mb-5")[0];
+
+    document.querySelectorAll(".type-card").forEach(card => {
+        card.addEventListener("click", (e) => {
+            setActive(typeContainer, e.currentTarget, ".type-card");
+            setType(card.id.replace("type-", ""));
+        });
+    });
+
+    const actionContainer = document.querySelectorAll(".row.g-3.mb-5")[1];
+
+document.querySelectorAll(".action-btn").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    setActive(actionContainer, e.currentTarget, ".action-btn");
+
+    const action = btn.id.replace("action-", "");
+    setAction(action.charAt(0).toUpperCase() + action.slice(1));
+  });
+});
 }
 
 async function setType(type) {
@@ -74,32 +94,32 @@ function setAction(action) {
 }
 
 async function loadUnits(type) {
-  const units = await getUnits(type);
+    const units = await getUnits(type);
 
-  // normal mode
-  populateDropdown(document.querySelector("#unit-from"), units);
-  populateDropdown(document.querySelector("#unit-to"), units);
+    // normal mode
+    populateDropdown(document.querySelector("#unit-from"), units);
+    populateDropdown(document.querySelector("#unit-to"), units);
 
-  // arithmetic mode
-  populateDropdown(document.querySelector("#arith-unit1"), units);
-  populateDropdown(document.querySelector("#arith-unit2"), units);
-  populateDropdown(document.querySelector("#arith-result-unit"), units);
+    // arithmetic mode
+    populateDropdown(document.querySelector("#arith-unit1"), units);
+    populateDropdown(document.querySelector("#arith-unit2"), units);
+    populateDropdown(document.querySelector("#arith-result-unit"), units);
 
-  // optional default selection (skip "-- Select Unit --")
-  if (units.length > 0) {
-    document.querySelector("#unit-from").selectedIndex = 1;
-    document.querySelector("#unit-to").selectedIndex = 2;
+    // optional default selection (skip "-- Select Unit --")
+    if (units.length > 0) {
+        document.querySelector("#unit-from").selectedIndex = 1;
+        document.querySelector("#unit-to").selectedIndex = 2;
 
-    const u1 = document.querySelector("#arith-unit1");
-    const u2 = document.querySelector("#arith-unit2");
-    const ur = document.querySelector("#arith-result-unit");
+        const u1 = document.querySelector("#arith-unit1");
+        const u2 = document.querySelector("#arith-unit2");
+        const ur = document.querySelector("#arith-result-unit");
 
-    if (u1 && u2 && ur) {
-      u1.selectedIndex = 1;
-      u2.selectedIndex = 2;
-      ur.selectedIndex = 1;
+        if (u1 && u2 && ur) {
+            u1.selectedIndex = 1;
+            u2.selectedIndex = 2;
+            ur.selectedIndex = 1;
+        }
     }
-  }
 }
 
 async function loadHistory() {
