@@ -36,3 +36,30 @@ export function setActive(parentEl, clickedEl, childSelector) {
 
   clickedEl.classList.add("active");
 }
+
+export function showResult(value, unitSymbol) {
+
+  const valueEl = document.querySelector("#result-value");
+  const unitEl = document.querySelector("#result-unit");
+
+  // exception case
+  if (!valueEl || !unitEl) return;
+
+  // handle null
+  if (value === null || value === undefined) {
+    valueEl.textContent = "—";
+    unitEl.textContent = "";
+    return;
+  }
+
+  // set values
+  valueEl.textContent = value;
+  unitEl.textContent = unitSymbol || "";
+
+  // highlight animation
+  valueEl.classList.add("highlight");
+
+  setTimeout(() => {
+    valueEl.classList.remove("highlight");
+  }, 1500);
+}

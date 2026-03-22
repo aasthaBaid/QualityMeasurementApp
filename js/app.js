@@ -1,6 +1,6 @@
 import { getUnits, saveHistory, getHistory } from "./api.js";
 import { convert, compareValues, performArithmetic } from "./conversion.js";
-import { populateDropdown, setActive } from "./ui.js";
+import { populateDropdown, setActive , showResult} from "./ui.js";
 
 const state = {
     type: "length",
@@ -127,60 +127,67 @@ async function loadHistory() {
 }
 
 async function performConversion() {
-    const fromVal = parseFloat(document.querySelector("#from-value").value);
-    const fromUnit = document.querySelector("#unit-from").value;
-    const toUnit = document.querySelector("#unit-to").value;
 
-    if (!fromUnit || !toUnit || isNaN(fromVal)) return;
+  try {
 
-    let result;
+    // comparison
+    if (state.action === "Comparison") {
 
-    try {
-        if (state.action === "Comparison") {
-            result = compareValues(fromVal, fromUnit, 1, toUnit);
-        }
+      const v = parseFloat(document.querySelector("#from-value").value);
+      const from = document.querySelector("#unit-from").value;
+      const to = document.querySelector("#unit-to").value;
 
-        else if (state.action === "Arithmetic") {
+      if (!from || !to || isNaN(v)) return;
 
-            const v1 = parseFloat(document.querySelector("#arith-value1").value);
-            const u1 = document.querySelector("#arith-unit1").value;
+      const result = compareValues(v, from, 1, to);
 
-            const v2 = parseFloat(document.querySelector("#arith-value2").value);
-            const u2 = document.querySelector("#arith-unit2").value;
-
-            const resultUnit = document.querySelector("#arith-result-unit").value;
-            const op = document.querySelector("#operator").value;
-
-            if (isNaN(v1) || isNaN(v2)) return;
-
-            // convert v2 → unit of v1
-            const v2Converted = await convert(v2, u2, u1);
-            if (v2Converted === null) return;
-
-            const baseResult = performArithmetic(v1, v2Converted, op);
-
-            const finalResult = await convert(baseResult, u1, resultUnit);
-
-            document.querySelector("#arith-result").textContent =
-                `${finalResult} ${resultUnit}`;
-        }
-
-        else {
-            result = await convert(fromVal, fromUnit, toUnit);
-        }
-
-        document.querySelector("#result-display").textContent = result;
-
-        await saveHistory({
-            type: state.type,
-            action: state.action,
-            result,
-            timestamp: new Date().toISOString()
-        });
-
-    } catch (err) {
-        if (err.message === "Divide by zero") {
-            document.querySelector("#result-display").textContent = "Cannot divide by zero";
-        }
+      showResult(result, "");
     }
+
+    // arithmetic
+    else if (state.action === "Arithmetic") {
+
+      const v1 = parseFloat(document.querySelector("#arith-value1").value);
+      const u1 = document.querySelector("#arith-unit1").value;
+
+      const v2 = parseFloat(document.querySelector("#arith-value2").value);
+      const u2 = document.querySelector("#arith-unit2").value;
+
+      const resultUnit = document.querySelector("#arith-result-unit").value;
+      const op = document.querySelector("#operator").value;
+
+      if (!u1 || !u2 || !resultUnit || isNaN(v1) || isNaN(v2)) return;
+
+      // convert second value
+      const v2Converted = await convert(v2, u2, u1);
+      if (v2Converted === null) return;
+
+      const base = performArithmetic(v1, v2Converted, op);
+
+      const finalResult = await convert(base, u1, resultUnit);
+      if (finalResult === null) return;
+
+      showResult(finalResult, resultUnit);
+    }
+
+    // conversion
+    else {
+
+      const v = parseFloat(document.querySelector("#from-value").value);
+      const from = document.querySelector("#unit-from").value;
+      const to = document.querySelector("#unit-to").value;
+
+      if (!from || !to || isNaN(v)) return;
+
+      const result = await convert(v, from, to);
+
+      showResult(result, to);
+    }
+
+  } catch (err) {
+
+    if (err.message === "Divide by zero") {
+      showResult("Cannot divide by zero", "");
+    }
+  }
 }
