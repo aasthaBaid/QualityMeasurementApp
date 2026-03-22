@@ -3,12 +3,7 @@ import { convert } from "./conversion.js";
 
 const state = {
   type: "length",
-  action: "Conversion",
-  fromVal: null,
-  fromUnit: "",
-  toVal: null,
-  toUnit: "",
-  operator: "+"
+  action: "Conversion"
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -20,7 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     toggleOperators(false);
     await loadHistory();
 
-    // ✅ IMPORTANT: trigger first conversion so history is created
+    // run once on load
     await performConversion();
 
   } catch (error) {
@@ -52,7 +47,7 @@ function attachEventListeners() {
     .addEventListener("click", () => setAction("Arithmetic"));
 }
 
-// handle action switching
+// switch between actions
 function setAction(action) {
   state.action = action;
 
@@ -68,14 +63,14 @@ function setAction(action) {
   performConversion();
 }
 
-// load units
+// load units (no UI binding yet)
 async function loadUnits(type) {
   console.log("Loading units for type:", type);
 
   const units = await getUnits(type);
 
-  if (units.length === 0) {
-    console.warn("No units found for type:", type);
+  if (!units.length) {
+    console.warn("No units found");
   }
 
   console.log("Units from API:", units);
@@ -86,7 +81,7 @@ function toggleOperators(show) {
   console.log("Operator row visible?", show);
 }
 
-// load history
+// fetch and log history
 async function loadHistory() {
   console.log("Loading history...");
 
@@ -100,7 +95,7 @@ async function loadHistory() {
   console.log("History:", history);
 }
 
-// MAIN LOGIC
+// main conversion logic
 async function performConversion() {
   const fromVal = parseFloat(document.querySelector("#from-value").value);
   const fromUnit = document.querySelector("#unit-from").value;
@@ -111,12 +106,12 @@ async function performConversion() {
   try {
     const result = await convert(fromVal, fromUnit, toUnit);
 
-    // ✅ prevent saving invalid results
+    // skip invalid results
     if (result === null) return;
 
     document.querySelector(".value-display").textContent = result;
 
-    // save history
+    // save history (only for relevant actions)
     if (state.action === "Conversion" || state.action === "Comparison") {
       const record = {
         type: state.type,
@@ -126,11 +121,10 @@ async function performConversion() {
         timestamp: new Date().toISOString()
       };
 
-      console.log("Saving record:", record);
-
       await saveHistory(record);
+
+      // small delay to allow json-server to update
       setTimeout(loadHistory, 200);
-      await getHistory();
     }
 
   } catch (error) {

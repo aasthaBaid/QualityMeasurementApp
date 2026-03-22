@@ -1,7 +1,6 @@
-// Universal base-unit conversion system
-// Base conversion factors (to base unit)
+import { getConversion } from "./api.js";
+
 const toBase = {
-  // length → meters
   km: 1000,
   m: 1,
   cm: 0.01,
@@ -10,41 +9,35 @@ const toBase = {
   yd: 0.9144,
   ft: 0.3048,
   in: 0.0254,
-
-  // weight → kg
   kg: 1,
   g: 0.001,
   mg: 0.000001,
   lb: 0.453592,
-
-  // volume → liter
   L: 1,
   mL: 0.001,
   m3: 1000
 };
 
-// Main conversion function
 export async function convert(value, fromUnit, toUnit) {
   try {
     if (fromUnit === toUnit) return value;
 
-    // Temperature (special case)
-    if (["C", "F", "K"].includes(fromUnit) && ["C", "F", "K"].includes(toUnit)) {
-      return convertTemperature(value, fromUnit, toUnit);
+    // 1. Try API
+    const convObj = await getConversion(fromUnit, toUnit);
+
+    if (convObj) {
+      return applyConversion(value, convObj);
     }
 
-    // invalid units
-    if (!toBase[fromUnit] || !toBase[toUnit]) {
-      throw new Error("Unsupported unit");
+    // 2. Fallback (THIS WAS BROKEN BEFORE)
+    if (toBase[fromUnit] !== undefined && toBase[toUnit] !== undefined) {
+      const baseValue = value * toBase[fromUnit];
+      const result = baseValue / toBase[toUnit];
+
+      return parseFloat(result.toFixed(6));
     }
 
-    // 1️ convert to base unit
-    const baseValue = value * toBase[fromUnit];
-
-    // 2️ convert to target unit
-    const result = baseValue / toBase[toUnit];
-
-    return result;
+    throw new Error("Conversion not available");
 
   } catch (err) {
     console.error("Conversion failed:", err.message);
@@ -52,24 +45,24 @@ export async function convert(value, fromUnit, toUnit) {
   }
 }
 
-// Temperature conversion helper
-function convertTemperature(value, from, to) {
-  let celsius;
+export function applyConversion(value, convObj) {
+  if (!Number.isFinite(value)) {
+    throw new Error("Invalid number");
+  }
 
-  // convert → Celsius
-  if (from === "C") celsius = value;
-  else if (from === "F") celsius = (value - 32) * 5 / 9;
-  else if (from === "K") celsius = value - 273.15;
+  if (!convObj || (convObj.factor === 1 && convObj.formula === null)) {
+    return value;
+  }
 
-  // convert from Celsius → target
-  if (to === "C") return celsius;
-  if (to === "F") return (celsius * 9 / 5) + 32;
-  if (to === "K") return celsius + 273.15;
+  if (convObj.factor !== null) {
+    return parseFloat((value * convObj.factor).toFixed(6));
+  }
+
+  if (convObj.formula) {
+    const expr = convObj.formula.replace(/x/g, value);
+    return parseFloat(eval(expr).toFixed(6));
+  }
+
+  throw new Error("Invalid conversion object");
 }
 
-// (optional, keep if used elsewhere)
-export function compareValues(val1, val2) {
-  if (val1 > val2) return "From is greater";
-  if (val1 < val2) return "To is greater";
-  return "Both are equal";
-}
