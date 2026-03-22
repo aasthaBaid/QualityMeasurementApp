@@ -1,65 +1,53 @@
 import { getUnits, saveHistory, getHistory } from "./api.js";
-import { convert, compareValues } from "./conversion.js";
+import { convert, compareValues, performArithmetic } from "./conversion.js";
 
 const state = {
     type: "length",
-    action: "Conversion"
+    action: "Comparison"
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
-    console.log("App Initialized");
-
-    try {
-        attachEventListeners();
-        await loadUnits(state.type);
-        toggleOperators(false);
-        await loadHistory();
-
-        // run once on load
-        await performConversion();
-
-    } catch (error) {
-        console.error(error);
-        alert("Server unavailable");
-    }
+    attachEventListeners();
+    await loadUnits(state.type);
+    setAction(state.action);
+    await loadHistory();
+    performConversion();
 });
 
-// attach all listeners
 function attachEventListeners() {
-    console.log("Listeners attached");
 
-    document.querySelector("#type-length")
-        .addEventListener("click", () => setType("length"));
+  // normal mode
+  document.querySelector("#from-value").addEventListener("input", performConversion);
+  document.querySelector("#unit-from").addEventListener("change", performConversion);
+  document.querySelector("#unit-to").addEventListener("change", performConversion);
 
-    document.querySelector("#type-weight")
-        .addEventListener("click", () => setType("weight"));
+  // arithmetic mode
+  document.querySelector("#arith-value1").addEventListener("input", performConversion);
+  document.querySelector("#arith-value2").addEventListener("input", performConversion);
 
-    document.querySelector("#type-temperature")
-        .addEventListener("click", () => setType("temperature"));
+  document.querySelector("#arith-unit1").addEventListener("change", performConversion);
+  document.querySelector("#arith-unit2").addEventListener("change", performConversion);
+  document.querySelector("#arith-result-unit").addEventListener("change", performConversion);
 
-    document.querySelector("#type-volume")
-        .addEventListener("click", () => setType("volume"));
+  document.querySelector("#operator").addEventListener("change", performConversion);
 
-    document.querySelector("#from-value")
-        .addEventListener("input", performConversion);
+  // action buttons
+  document.querySelector("#action-comparison").onclick = () => setAction("Comparison");
+  document.querySelector("#action-conversion").onclick = () => setAction("Conversion");
+  document.querySelector("#action-arithmetic").onclick = () => setAction("Arithmetic");
 
-    document.querySelector("#unit-from")
-        .addEventListener("change", performConversion);
-
-    document.querySelector("#unit-to")
-        .addEventListener("change", performConversion);
-
-    document.querySelector("#action-comparison")
-        .addEventListener("click", () => setAction("Comparison"));
-
-    document.querySelector("#action-conversion")
-        .addEventListener("click", () => setAction("Conversion"));
-
-    document.querySelector("#action-arithmetic")
-        .addEventListener("click", () => setAction("Arithmetic"));
+  // type buttons
+  document.querySelector("#type-length").onclick = () => setType("length");
+  document.querySelector("#type-weight").onclick = () => setType("weight");
+  document.querySelector("#type-temperature").onclick = () => setType("temperature");
+  document.querySelector("#type-volume").onclick = () => setType("volume");
 }
 
-// switch between actions
+async function setType(type) {
+    state.type = type;
+    await loadUnits(type);   // 🔥 FIX (important)
+    performConversion();
+}
 function setAction(action) {
     state.action = action;
 
@@ -70,119 +58,108 @@ function setAction(action) {
     document.querySelector(`#action-${action.toLowerCase()}`)
         .classList.add("active");
 
-    console.log("Action changed to:", action);
+    const normal = document.querySelector("#normal-block");
+    const arithmetic = document.querySelector("#arithmetic-layout");
+
+    if (action === "Arithmetic") {
+        normal.style.display = "none";
+        arithmetic.style.display = "block";
+    } else {
+        normal.style.display = "flex";
+        arithmetic.style.display = "none";
+    }
 
     performConversion();
 }
-
-// load units (no UI binding yet)
 async function loadUnits(type) {
-  console.log("Loading units for type:", type);
-
   const units = await getUnits(type);
 
-  const fromSelect = document.querySelector("#unit-from");
-  const toSelect = document.querySelector("#unit-to");
+  const selects = [
+    "#unit-from",
+    "#unit-to",
+    "#arith-unit1",
+    "#arith-unit2",
+    "#arith-result-unit"
+  ];
 
-  // clear old options
-  fromSelect.innerHTML = "";
-  toSelect.innerHTML = "";
+  selects.forEach(selector => {
+    const select = document.querySelector(selector);
+    if (!select) return;
 
-  if (!units.length) {
-    console.warn("No units found");
-    return;
-  }
+    select.innerHTML = "";
 
-  // populate dropdowns
-  units.forEach(unit => {
-    const option1 = new Option(unit.label, unit.symbol);
-    const option2 = new Option(unit.label, unit.symbol);
-
-    fromSelect.add(option1);
-    toSelect.add(option2);
+    units.forEach(u => {
+      select.add(new Option(u.label, u.symbol));
+    });
   });
 
   // default selections
-  fromSelect.selectedIndex = 0;
-  toSelect.selectedIndex = 1;
+  document.querySelector("#unit-from").selectedIndex = 0;
+  document.querySelector("#unit-to").selectedIndex = 1;
 
-  console.log("Units loaded:", units);
+  document.querySelector("#arith-unit1").selectedIndex = 0;
+  document.querySelector("#arith-unit2").selectedIndex = 1;
+  document.querySelector("#arith-result-unit").selectedIndex = 0;
 }
-
-function setType(type) {
-  state.type = type;
-
-  // update active UI
-  document.querySelectorAll(".type-card").forEach(card => {
-    card.classList.remove("active");
-  });
-
-  document.querySelector(`#type-${type}`).classList.add("active");
-
-  console.log("Type changed to:", type);
-
-  // reload units
-  loadUnits(type);
-
-  // re-run conversion
-  performConversion();
-}
-
-// placeholder
-function toggleOperators(show) {
-    console.log("Operator row visible?", show);
-}
-
-// fetch and log history
 async function loadHistory() {
-    console.log("Loading history...");
-
-    const history = await getHistory();
-
-    if (!history.length) {
-        console.log("No history yet");
-        return;
-    }
-
-    console.log("History:", history);
+    console.log(await getHistory());
 }
 
-// main conversion logic
 async function performConversion() {
     const fromVal = parseFloat(document.querySelector("#from-value").value);
     const fromUnit = document.querySelector("#unit-from").value;
     const toUnit = document.querySelector("#unit-to").value;
 
-    if (isNaN(fromVal)) return;
+    if (!fromUnit || !toUnit || isNaN(fromVal)) return;
+
+    let result;
 
     try {
-        let result;
-
         if (state.action === "Comparison") {
-            // compare using base logic
             result = compareValues(fromVal, fromUnit, 1, toUnit);
-        } else {
-            // normal conversion
+        }
+
+        else if (state.action === "Arithmetic") {
+
+            const v1 = parseFloat(document.querySelector("#arith-value1").value);
+            const u1 = document.querySelector("#arith-unit1").value;
+
+            const v2 = parseFloat(document.querySelector("#arith-value2").value);
+            const u2 = document.querySelector("#arith-unit2").value;
+
+            const resultUnit = document.querySelector("#arith-result-unit").value;
+            const op = document.querySelector("#operator").value;
+
+            if (isNaN(v1) || isNaN(v2)) return;
+
+            // convert v2 → unit of v1
+            const v2Converted = await convert(v2, u2, u1);
+            if (v2Converted === null) return;
+
+            const baseResult = performArithmetic(v1, v2Converted, op);
+
+            const finalResult = await convert(baseResult, u1, resultUnit);
+
+            document.querySelector("#arith-result").textContent =
+                `${finalResult} ${resultUnit}`;
+        }
+
+        else {
             result = await convert(fromVal, fromUnit, toUnit);
         }
 
-        if (result === null) return;
+        document.querySelector("#result-display").textContent = result;
 
-        document.querySelector(".value-display").textContent = result;
-
-        // save history
-        const record = {
+        await saveHistory({
             type: state.type,
             action: state.action,
-            expression: `${fromVal} ${fromUnit} → ${toUnit}`,
             result,
             timestamp: new Date().toISOString()
-        };
+        });
 
-        await saveHistory(record);
-        setTimeout(loadHistory, 200);
-
-    } catch (error) {
-        console.error("Operation failed:", error.message);
+    } catch (err) {
+        if (err.message === "Divide by zero") {
+            document.querySelector("#result-display").textContent = "Cannot divide by zero";
+        }
     }
 }
