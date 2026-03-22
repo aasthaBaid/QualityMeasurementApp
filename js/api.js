@@ -33,8 +33,22 @@ export async function saveHistory(record) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(record)
     });
+    console.log("POST status:", res.status);
     return await res.json();
   } catch (err) {
     console.error("Error saving history:", err);
+  }
+}
+
+export async function getHistory() {
+  try {
+    const res = await fetch(
+      `${BASE_URL}/history`
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error("Error fetching history:", err);
+    return [];
   }
 }

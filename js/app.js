@@ -1,7 +1,6 @@
-import { getUnits, saveHistory } from "./api.js";
+import { getUnits, saveHistory, getHistory } from "./api.js";
 import { convert } from "./conversion.js";
 
-// ✅ state moved outside (fix scope issue)
 const state = {
   type: "length",
   action: "Conversion",
@@ -20,17 +19,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadUnits(state.type);
     toggleOperators(false);
     await loadHistory();
+
+    // ✅ IMPORTANT: trigger first conversion so history is created
+    await performConversion();
+
   } catch (error) {
     console.error(error);
     alert("Server unavailable");
   }
 });
 
-// ✅ attach all listeners
+// attach all listeners
 function attachEventListeners() {
   console.log("Listeners attached");
 
-  // conversion triggers
   document.querySelector("#from-value")
     .addEventListener("input", performConversion);
 
@@ -40,7 +42,6 @@ function attachEventListeners() {
   document.querySelector("#unit-to")
     .addEventListener("change", performConversion);
 
-  // ✅ action buttons (FIX)
   document.querySelector("#action-comparison")
     .addEventListener("click", () => setAction("Comparison"));
 
@@ -51,11 +52,10 @@ function attachEventListeners() {
     .addEventListener("click", () => setAction("Arithmetic"));
 }
 
-// ✅ handle action switching
+// handle action switching
 function setAction(action) {
   state.action = action;
 
-  // UI active toggle
   document.querySelectorAll(".action-btn").forEach(btn => {
     btn.classList.remove("active");
   });
@@ -65,11 +65,10 @@ function setAction(action) {
 
   console.log("Action changed to:", action);
 
-  // re-run logic immediately
   performConversion();
 }
 
-// load units (keeping your structure)
+// load units
 async function loadUnits(type) {
   console.log("Loading units for type:", type);
 
@@ -82,17 +81,26 @@ async function loadUnits(type) {
   console.log("Units from API:", units);
 }
 
-// not used yet
+// placeholder
 function toggleOperators(show) {
   console.log("Operator row visible?", show);
 }
 
-// not implemented yet
+// load history
 async function loadHistory() {
   console.log("Loading history...");
+
+  const history = await getHistory();
+
+  if (!history.length) {
+    console.log("No history yet");
+    return;
+  }
+
+  console.log("History:", history);
 }
 
-// ✅ MAIN LOGIC FIXED HERE
+// MAIN LOGIC
 async function performConversion() {
   const fromVal = parseFloat(document.querySelector("#from-value").value);
   const fromUnit = document.querySelector("#unit-from").value;
@@ -101,13 +109,15 @@ async function performConversion() {
   if (isNaN(fromVal)) return;
 
   try {
-    // ✅ ALWAYS convert (regardless of action)
     const result = await convert(fromVal, fromUnit, toUnit);
+
+    // ✅ prevent saving invalid results
+    if (result === null) return;
 
     document.querySelector(".value-display").textContent = result;
 
-    // save history only for conversion (optional)
-    if (state.action === "Conversion") {
+    // save history
+    if (state.action === "Conversion" || state.action === "Comparison") {
       const record = {
         type: state.type,
         action: state.action,
@@ -116,7 +126,11 @@ async function performConversion() {
         timestamp: new Date().toISOString()
       };
 
+      console.log("Saving record:", record);
+
       await saveHistory(record);
+      setTimeout(loadHistory, 200);
+      await getHistory();
     }
 
   } catch (error) {
