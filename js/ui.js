@@ -63,3 +63,19 @@ export function showResult(value, unitSymbol) {
     valueEl.classList.remove("highlight");
   }, 1500);
 }
+
+export function toggleLayout(action) {
+
+  const normalBlock = document.querySelector("#normal-block");
+  const arithmeticBlock = document.querySelector("#arithmetic-layout");
+
+  if (!normalBlock || !arithmeticBlock) return;
+
+  if (action === "Arithmetic") {
+    normalBlock.style.display = "none";
+    arithmeticBlock.style.display = "flex";
+  } else {
+    normalBlock.style.display = "flex";
+    arithmeticBlock.style.display = "none";
+  }
+}

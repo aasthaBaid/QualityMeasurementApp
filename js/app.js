@@ -1,131 +1,127 @@
-import { getUnits, saveHistory, getHistory } from "./api.js";
+import { getUnits, getHistory } from "./api.js";
 import { convert, compareValues, performArithmetic } from "./conversion.js";
-import { populateDropdown, setActive , showResult} from "./ui.js";
+import { populateDropdown, setActive, showResult, toggleLayout } from "./ui.js";
 
 const state = {
-    type: "length",
-    action: "Comparison"
+  type: "length",
+  action: "Comparison"
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
-    attachEventListeners();
-    await loadUnits(state.type);
-    setAction(state.action);
-    await loadHistory();
-    performConversion();
+
+  attachEventListeners();
+
+  await loadUnits(state.type);
+
+  setAction(state.action); // sets UI + toggle
+
+  await loadHistory();
+
+  performConversion();
 });
 
+
+// attach all listeners
 function attachEventListeners() {
 
-    // normal mode
-    document.querySelector("#from-value").addEventListener("input", performConversion);
-    document.querySelector("#unit-from").addEventListener("change", performConversion);
-    document.querySelector("#unit-to").addEventListener("change", performConversion);
+  // normal mode inputs
+  document.querySelector("#from-value").addEventListener("input", performConversion);
+  document.querySelector("#unit-from").addEventListener("change", performConversion);
+  document.querySelector("#unit-to").addEventListener("change", performConversion);
 
-    // arithmetic mode
-    document.querySelector("#arith-value1").addEventListener("input", performConversion);
-    document.querySelector("#arith-value2").addEventListener("input", performConversion);
+  // arithmetic inputs
+  document.querySelector("#arith-value1").addEventListener("input", performConversion);
+  document.querySelector("#arith-value2").addEventListener("input", performConversion);
+  document.querySelector("#arith-unit1").addEventListener("change", performConversion);
+  document.querySelector("#arith-unit2").addEventListener("change", performConversion);
+  document.querySelector("#arith-result-unit").addEventListener("change", performConversion);
+  document.querySelector("#operator").addEventListener("change", performConversion);
 
-    document.querySelector("#arith-unit1").addEventListener("change", performConversion);
-    document.querySelector("#arith-unit2").addEventListener("change", performConversion);
-    document.querySelector("#arith-result-unit").addEventListener("change", performConversion);
+  // type selection
+  const typeContainer = document.querySelectorAll(".row.g-3.mb-5")[0];
 
-    document.querySelector("#operator").addEventListener("change", performConversion);
-
-    // action buttons
-    document.querySelector("#action-comparison").onclick = () => setAction("Comparison");
-    document.querySelector("#action-conversion").onclick = () => setAction("Conversion");
-    document.querySelector("#action-arithmetic").onclick = () => setAction("Arithmetic");
-
-    // type buttons
-    document.querySelector("#type-length").onclick = () => setType("length");
-    document.querySelector("#type-weight").onclick = () => setType("weight");
-    document.querySelector("#type-temperature").onclick = () => setType("temperature");
-    document.querySelector("#type-volume").onclick = () => setType("volume");
-
-    const typeContainer = document.querySelectorAll(".row.g-3.mb-5")[0];
-
-    document.querySelectorAll(".type-card").forEach(card => {
-        card.addEventListener("click", (e) => {
-            setActive(typeContainer, e.currentTarget, ".type-card");
-            setType(card.id.replace("type-", ""));
-        });
+  document.querySelectorAll(".type-card").forEach(card => {
+    card.addEventListener("click", (e) => {
+      setActive(typeContainer, e.currentTarget, ".type-card");
+      setType(card.id.replace("type-", ""));
     });
-
-    const actionContainer = document.querySelectorAll(".row.g-3.mb-5")[1];
-
-document.querySelectorAll(".action-btn").forEach(btn => {
-  btn.addEventListener("click", (e) => {
-    setActive(actionContainer, e.currentTarget, ".action-btn");
-
-    const action = btn.id.replace("action-", "");
-    setAction(action.charAt(0).toUpperCase() + action.slice(1));
   });
-});
-}
 
-async function setType(type) {
-    state.type = type;
-    await loadUnits(type);   // 🔥 FIX (important)
-    performConversion();
-}
-function setAction(action) {
-    state.action = action;
+  // action selection (ONLY ONE HANDLER)
+  const actionContainer = document.querySelectorAll(".row.g-3.mb-5")[1];
 
-    document.querySelectorAll(".action-btn").forEach(btn => {
-        btn.classList.remove("active");
+  document.querySelectorAll(".action-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+
+      setActive(actionContainer, e.currentTarget, ".action-btn");
+
+      const action = btn.id.replace("action-", "");
+      setAction(action.charAt(0).toUpperCase() + action.slice(1));
     });
-
-    document.querySelector(`#action-${action.toLowerCase()}`)
-        .classList.add("active");
-
-    const normal = document.querySelector("#normal-block");
-    const arithmetic = document.querySelector("#arithmetic-layout");
-
-    if (action === "Arithmetic") {
-        normal.style.display = "none";
-        arithmetic.style.display = "block";
-    } else {
-        normal.style.display = "flex";
-        arithmetic.style.display = "none";
-    }
-
-    performConversion();
+  });
 }
 
+
+// set type
+async function setType(type) {
+  state.type = type;
+  await loadUnits(type);
+  performConversion();
+}
+
+
+// set action and toggle UI
+function setAction(action) {
+
+  state.action = action;
+
+  // highlight active button
+  document.querySelectorAll(".action-btn").forEach(btn => {
+    btn.classList.remove("active");
+  });
+
+  document.querySelector(`#action-${action.toLowerCase()}`)
+    .classList.add("active");
+
+  // toggle layout
+  toggleLayout(action);
+
+  performConversion();
+}
+
+
+// load units into dropdowns
 async function loadUnits(type) {
-    const units = await getUnits(type);
 
-    // normal mode
-    populateDropdown(document.querySelector("#unit-from"), units);
-    populateDropdown(document.querySelector("#unit-to"), units);
+  const units = await getUnits(type);
 
-    // arithmetic mode
-    populateDropdown(document.querySelector("#arith-unit1"), units);
-    populateDropdown(document.querySelector("#arith-unit2"), units);
-    populateDropdown(document.querySelector("#arith-result-unit"), units);
+  populateDropdown(document.querySelector("#unit-from"), units);
+  populateDropdown(document.querySelector("#unit-to"), units);
 
-    // optional default selection (skip "-- Select Unit --")
-    if (units.length > 0) {
-        document.querySelector("#unit-from").selectedIndex = 1;
-        document.querySelector("#unit-to").selectedIndex = 2;
+  populateDropdown(document.querySelector("#arith-unit1"), units);
+  populateDropdown(document.querySelector("#arith-unit2"), units);
+  populateDropdown(document.querySelector("#arith-result-unit"), units);
 
-        const u1 = document.querySelector("#arith-unit1");
-        const u2 = document.querySelector("#arith-unit2");
-        const ur = document.querySelector("#arith-result-unit");
+  // set default selections
+  if (units.length > 0) {
 
-        if (u1 && u2 && ur) {
-            u1.selectedIndex = 1;
-            u2.selectedIndex = 2;
-            ur.selectedIndex = 1;
-        }
-    }
+    document.querySelector("#unit-from").selectedIndex = 1;
+    document.querySelector("#unit-to").selectedIndex = 2;
+
+    document.querySelector("#arith-unit1").selectedIndex = 1;
+    document.querySelector("#arith-unit2").selectedIndex = 2;
+    document.querySelector("#arith-result-unit").selectedIndex = 1;
+  }
 }
 
+
+// load history
 async function loadHistory() {
-    console.log(await getHistory());
+  console.log(await getHistory());
 }
 
+
+// main logic
 async function performConversion() {
 
   try {
@@ -158,7 +154,6 @@ async function performConversion() {
 
       if (!u1 || !u2 || !resultUnit || isNaN(v1) || isNaN(v2)) return;
 
-      // convert second value
       const v2Converted = await convert(v2, u2, u1);
       if (v2Converted === null) return;
 
