@@ -1,5 +1,6 @@
 import { getUnits, saveHistory, getHistory } from "./api.js";
 import { convert, compareValues, performArithmetic } from "./conversion.js";
+import { populateDropdown } from "./ui.js";
 
 const state = {
     type: "length",
@@ -71,36 +72,36 @@ function setAction(action) {
 
     performConversion();
 }
+
 async function loadUnits(type) {
   const units = await getUnits(type);
 
-  const selects = [
-    "#unit-from",
-    "#unit-to",
-    "#arith-unit1",
-    "#arith-unit2",
-    "#arith-result-unit"
-  ];
+  // normal mode
+  populateDropdown(document.querySelector("#unit-from"), units);
+  populateDropdown(document.querySelector("#unit-to"), units);
 
-  selects.forEach(selector => {
-    const select = document.querySelector(selector);
-    if (!select) return;
+  // arithmetic mode
+  populateDropdown(document.querySelector("#arith-unit1"), units);
+  populateDropdown(document.querySelector("#arith-unit2"), units);
+  populateDropdown(document.querySelector("#arith-result-unit"), units);
 
-    select.innerHTML = "";
+  // optional default selection (skip "-- Select Unit --")
+  if (units.length > 0) {
+    document.querySelector("#unit-from").selectedIndex = 1;
+    document.querySelector("#unit-to").selectedIndex = 2;
 
-    units.forEach(u => {
-      select.add(new Option(u.label, u.symbol));
-    });
-  });
+    const u1 = document.querySelector("#arith-unit1");
+    const u2 = document.querySelector("#arith-unit2");
+    const ur = document.querySelector("#arith-result-unit");
 
-  // default selections
-  document.querySelector("#unit-from").selectedIndex = 0;
-  document.querySelector("#unit-to").selectedIndex = 1;
-
-  document.querySelector("#arith-unit1").selectedIndex = 0;
-  document.querySelector("#arith-unit2").selectedIndex = 1;
-  document.querySelector("#arith-result-unit").selectedIndex = 0;
+    if (u1 && u2 && ur) {
+      u1.selectedIndex = 1;
+      u2.selectedIndex = 2;
+      ur.selectedIndex = 1;
+    }
+  }
 }
+
 async function loadHistory() {
     console.log(await getHistory());
 }
