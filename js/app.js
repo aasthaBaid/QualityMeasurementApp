@@ -186,9 +186,28 @@ async function performConversion() {
 
     let result;
     let unit = "";
+    let expression = "";
+
+    // ================= CONVERSION =================
+    if (state.action === "Conversion") {
+
+      const v = parseFloat(document.querySelector("#from-value").value);
+      const from = document.querySelector("#unit-from").value;
+      const to = document.querySelector("#unit-to").value;
+
+      if (!from || !to || isNaN(v)) return;
+
+      result = await convert(v, from, to);
+      if (result === null) return;
+
+      unit = to;
+      expression = `${v} ${from} → ${to}`;
+
+      showResult(result, unit);
+    }
 
     // ================= COMPARISON =================
-    if (state.action === "Comparison") {
+    else if (state.action === "Comparison") {
 
       const v = parseFloat(document.querySelector("#from-value").value);
       const from = document.querySelector("#unit-from").value;
@@ -198,11 +217,13 @@ async function performConversion() {
 
       result = compareValues(v, from, 1, to);
 
+      expression = `${v} ${from} vs ${to}`;
+
       showResult(result, "");
     }
 
     // ================= ARITHMETIC =================
-    else if (state.action === "Arithmetic") {
+    else {
 
       const v1 = parseFloat(document.querySelector("#arith-value1").value);
       const u1 = document.querySelector("#arith-unit1").value;
@@ -220,47 +241,33 @@ async function performConversion() {
 
       const base = performArithmetic(v1, v2Converted, op);
 
-      const finalResult = await convert(base, u1, resultUnit);
-      if (finalResult === null) return;
+      result = await convert(base, u1, resultUnit);
+      if (result === null) return;
 
-      result = finalResult;
       unit = resultUnit;
-
-      showResult(result, unit);
-    }
-
-    // ================= CONVERSION =================
-    else {
-
-      const v = parseFloat(document.querySelector("#from-value").value);
-      const from = document.querySelector("#unit-from").value;
-      const to = document.querySelector("#unit-to").value;
-
-      if (!from || !to || isNaN(v)) return;
-
-      result = await convert(v, from, to);
-
-      unit = to;
+      expression = `${v1} ${u1} ${op} ${v2} ${u2}`;
 
       showResult(result, unit);
     }
 
     // ================= SAVE HISTORY =================
-    await saveHistory({
+    const record = {
       type: state.type,
       action: state.action,
+      expression,
       result: unit ? `${result} ${unit}` : result,
       timestamp: new Date().toISOString()
-    });
+    };
 
-    // reload history UI
-    await loadHistory();
+    await saveHistory(record);
 
-  } catch (err) {
+    // ================= REFRESH HISTORY =================
+    const history = await getHistory();
+    renderHistory(history);
 
-    if (err.message === "Divide by zero") {
-      showResult("Cannot divide by zero", "");
-    }
+  } catch (e) {
+
+    showResult("Error: " + e.message, "");
   }
 }
 

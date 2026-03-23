@@ -1846,6 +1846,86 @@
       "result": "0.621373 mi",
       "timestamp": "2026-03-23T04:53:18.441Z",
       "id": "fL0ms9Z76Nk"
+    },
+    {
+      "type": "length",
+      "action": "Comparison",
+      "expression": "1 km vs m",
+      "result": "1 km > 1 m",
+      "timestamp": "2026-03-23T05:06:00.404Z",
+      "id": "jwt_3-dID8c"
+    },
+    {
+      "type": "length",
+      "action": "Comparison",
+      "expression": "1 km vs m",
+      "result": "1 km > 1 m",
+      "timestamp": "2026-03-23T05:06:00.426Z",
+      "id": "U0qX9yQ8b-U"
+    },
+    {
+      "type": "length",
+      "action": "Conversion",
+      "expression": "1 mm → m",
+      "result": "0.001 m",
+      "timestamp": "2026-03-23T05:06:05.718Z",
+      "id": "B9RaRlHx5qU"
+    },
+    {
+      "type": "length",
+      "action": "Arithmetic",
+      "expression": "1 km + 1 m",
+      "result": "100100 cm",
+      "timestamp": "2026-03-23T05:06:10.699Z",
+      "id": "66NBT5rJifQ"
+    },
+    {
+      "type": "length",
+      "action": "Arithmetic",
+      "expression": "1 mm + 1 m",
+      "result": "100.1 cm",
+      "timestamp": "2026-03-23T05:06:13.226Z",
+      "id": "89ri-fcaJnM"
+    },
+    {
+      "type": "length",
+      "action": "Arithmetic",
+      "expression": "1 mm * 1 m",
+      "result": "100 cm",
+      "timestamp": "2026-03-23T05:06:17.614Z",
+      "id": "seiZlNh4hP8"
+    },
+    {
+      "type": "length",
+      "action": "Arithmetic",
+      "expression": "1 mm / 1 m",
+      "result": "0.0001 cm",
+      "timestamp": "2026-03-23T05:06:20.546Z",
+      "id": "DObt8JXp2eE"
+    },
+    {
+      "type": "length",
+      "action": "Arithmetic",
+      "expression": "1 mm - 1 m",
+      "result": "-99.9 cm",
+      "timestamp": "2026-03-23T05:06:22.369Z",
+      "id": "Pt5FyMHZMtE"
+    },
+    {
+      "type": "length",
+      "action": "Arithmetic",
+      "expression": "1 mm - 1 m",
+      "result": "-999 mm",
+      "timestamp": "2026-03-23T05:06:27.761Z",
+      "id": "IKi5WqRrdCs"
+    },
+    {
+      "type": "length",
+      "action": "Arithmetic",
+      "expression": "1 mm - 1 mm",
+      "result": "0 mm",
+      "timestamp": "2026-03-23T05:06:31.398Z",
+      "id": "xTFXJ7l3ax4"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"
