@@ -38,14 +38,48 @@ function attachEventListeners() {
   document.querySelector("#operator").addEventListener("change", performConversion);
 
   // type selection
-  const typeContainer = document.querySelectorAll(".row.g-3.mb-5")[0];
+// type selection
+const typeContainer = document.querySelectorAll(".row.g-3.mb-5")[0];
 
-  document.querySelectorAll(".type-card").forEach(card => {
-    card.addEventListener("click", (e) => {
-      setActive(typeContainer, e.currentTarget, ".type-card");
-      setType(card.id.replace("type-", ""));
-    });
+document.querySelectorAll(".type-card").forEach(card => {
+  card.addEventListener("click", async () => {
+
+    try {
+
+      // 1. update state
+      const type = card.id.replace("type-", "");
+      state.type = type;
+
+      // 2. set active UI
+      setActive(typeContainer, card, ".type-card");
+
+      // 3. clear inputs
+      document.querySelector("#from-value").value = "";
+      document.querySelector("#arith-value1").value = "";
+      document.querySelector("#arith-value2").value = "";
+
+      // 4. reset result
+      showResult(0, "");
+
+      // 5. load units
+      const units = await getUnits(type);
+
+      // 6. repopulate dropdowns
+      populateDropdown(document.querySelector("#unit-from"), units);
+      populateDropdown(document.querySelector("#unit-to"), units);
+
+      populateDropdown(document.querySelector("#arith-unit1"), units);
+      populateDropdown(document.querySelector("#arith-unit2"), units);
+      populateDropdown(document.querySelector("#arith-result-unit"), units);
+
+    } catch (err) {
+
+      console.error("Failed to load units:", err);
+      alert("Error loading units");
+
+    }
   });
+});
 
   // action selection (ONLY ONE HANDLER)
   const actionContainer = document.querySelectorAll(".row.g-3.mb-5")[1];
