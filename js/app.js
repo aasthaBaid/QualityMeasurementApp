@@ -1,6 +1,6 @@
-import { getUnits, getHistory } from "./api.js";
+import { getUnits, getHistory, saveHistory } from "./api.js";
 import { convert, compareValues, performArithmetic } from "./conversion.js";
-import { populateDropdown, setActive, showResult, toggleLayout } from "./ui.js";
+import { populateDropdown, setActive, showResult, toggleLayout, renderHistory } from "./ui.js";
 
 const state = {
   type: "length",
@@ -58,6 +58,20 @@ function attachEventListeners() {
       const action = btn.id.replace("action-", "");
       setAction(action.charAt(0).toUpperCase() + action.slice(1));
     });
+  });
+
+  document.querySelector("#toggle-history").addEventListener("click", () => {
+
+    const container = document.querySelector("#history-container");
+    const btn = document.querySelector("#toggle-history");
+
+    if (container.style.display === "none") {
+      container.style.display = "block";
+      btn.textContent = "Hide History";
+    } else {
+      container.style.display = "none";
+      btn.textContent = "Show History";
+    }
   });
 }
 
@@ -117,16 +131,21 @@ async function loadUnits(type) {
 
 // load history
 async function loadHistory() {
-  console.log(await getHistory());
-}
 
+  const history = await getHistory();
+
+  renderHistory(history);
+}
 
 // main logic
 async function performConversion() {
 
   try {
 
-    // comparison
+    let result;
+    let unit = "";
+
+    // ================= COMPARISON =================
     if (state.action === "Comparison") {
 
       const v = parseFloat(document.querySelector("#from-value").value);
@@ -135,12 +154,12 @@ async function performConversion() {
 
       if (!from || !to || isNaN(v)) return;
 
-      const result = compareValues(v, from, 1, to);
+      result = compareValues(v, from, 1, to);
 
       showResult(result, "");
     }
 
-    // arithmetic
+    // ================= ARITHMETIC =================
     else if (state.action === "Arithmetic") {
 
       const v1 = parseFloat(document.querySelector("#arith-value1").value);
@@ -162,10 +181,13 @@ async function performConversion() {
       const finalResult = await convert(base, u1, resultUnit);
       if (finalResult === null) return;
 
-      showResult(finalResult, resultUnit);
+      result = finalResult;
+      unit = resultUnit;
+
+      showResult(result, unit);
     }
 
-    // conversion
+    // ================= CONVERSION =================
     else {
 
       const v = parseFloat(document.querySelector("#from-value").value);
@@ -174,10 +196,23 @@ async function performConversion() {
 
       if (!from || !to || isNaN(v)) return;
 
-      const result = await convert(v, from, to);
+      result = await convert(v, from, to);
 
-      showResult(result, to);
+      unit = to;
+
+      showResult(result, unit);
     }
+
+    // ================= SAVE HISTORY =================
+    await saveHistory({
+      type: state.type,
+      action: state.action,
+      result: unit ? `${result} ${unit}` : result,
+      timestamp: new Date().toISOString()
+    });
+
+    // reload history UI
+    await loadHistory();
 
   } catch (err) {
 
@@ -186,3 +221,4 @@ async function performConversion() {
     }
   }
 }
+

@@ -79,3 +79,27 @@ export function toggleLayout(action) {
     arithmeticBlock.style.display = "none";
   }
 }
+
+export function renderHistory(history) {
+
+  const list = document.querySelector("#history-list");
+
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  if (!history.length) {
+    list.innerHTML = "<li class='list-group-item'>No history yet</li>";
+    return;
+  }
+
+  history.forEach(item => {
+
+    const li = document.createElement("li");
+    li.className = "list-group-item";
+
+    li.textContent = `${item.action} → ${item.result}`;
+
+    list.appendChild(li);
+  });
+}
