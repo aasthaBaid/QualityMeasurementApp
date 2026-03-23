@@ -1811,6 +1811,41 @@
       "result": "1 F",
       "timestamp": "2026-03-23T04:47:20.341Z",
       "id": "HEZCWgO7QG0"
+    },
+    {
+      "type": "length",
+      "action": "Comparison",
+      "result": "1 km > 1 m",
+      "timestamp": "2026-03-23T04:52:26.867Z",
+      "id": "_DGeG2mSqcU"
+    },
+    {
+      "type": "length",
+      "action": "Comparison",
+      "result": "1 km > 1 m",
+      "timestamp": "2026-03-23T04:52:26.900Z",
+      "id": "W81F_eD61Qc"
+    },
+    {
+      "type": "length",
+      "action": "Comparison",
+      "result": "1 km > 1 m",
+      "timestamp": "2026-03-23T04:53:12.073Z",
+      "id": "3kJwrVObe0U"
+    },
+    {
+      "type": "length",
+      "action": "Comparison",
+      "result": "1 km > 1 m",
+      "timestamp": "2026-03-23T04:53:12.104Z",
+      "id": "vnVIpt9BPcQ"
+    },
+    {
+      "type": "length",
+      "action": "Conversion",
+      "result": "0.621373 mi",
+      "timestamp": "2026-03-23T04:53:18.441Z",
+      "id": "fL0ms9Z76Nk"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"
